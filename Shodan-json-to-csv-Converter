@@ -1,0 +1,40 @@
+import json
+import csv
+from collections.abc import MutableMapping
+
+def flatten_json(y):
+    out = {}
+
+    def flatten(x, name=''):
+        if isinstance(x, MutableMapping):
+            for a in x:
+                flatten(x[a], name + a + '_')
+        elif isinstance(x, list):
+            for i, a in enumerate(x):
+                flatten(a, name + str(i) + '_')
+        else:
+            out[name[:-1]] = x
+
+    flatten(y)
+    return out
+
+def shodan_json_to_csv():
+    json_file = input("Enter the path to the Shodan JSON file: ")
+    csv_file = input("Enter the path to the output CSV file: ")
+    
+    data = []
+    with open(json_file, 'r', encoding='utf-8') as f:
+        for line in f:
+            data.append(json.loads(line))
+    
+    flattened_data = [flatten_json(item) for item in data]
+    
+    keys = set().union(*(d.keys() for d in flattened_data))
+    
+    with open(csv_file, 'w', newline='', encoding='utf-8') as f:
+        dict_writer = csv.DictWriter(f, fieldnames=keys)
+        dict_writer.writeheader()
+        dict_writer.writerows(flattened_data)
+
+# Execute the function
+shodan_json_to_csv()
